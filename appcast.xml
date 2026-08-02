@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<rss version="2.0"
+     xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+
+    <channel>
+
+        <title>Happy Updates</title>
+
+        <link>
+            https://github.com/mrh241342-glitch/Happy/releases
+        </link>
+
+        <description>
+            Happy Application Updates
+        </description>
+
+        <language>en</language>
+
+
+        <item>
+
+            <title>Happy 1.1.0</title>
+
+            <sparkle:version>1.1.0</sparkle:version>
+
+            <pubDate>
+                Sun, 02 Aug 2026 00:00:00 GMT
+            </pubDate>
+
+            <description>
+                <![CDATA[
+                    <h2>Happy 1.1.0 Update</h2>
+                    <p>New version of Happy is available.</p>
+                ]]>
+            </description>
+
+            <enclosure
+                url="https://github.com/mrh241342-glitch/Happy/releases/download/v0.2.0/Updated.zip"
+                sparkle:version="1.1.0"
+                type="application/octet-stream"
+            />
+
+        </item>
+
+    </channel>
+
+</rss>
