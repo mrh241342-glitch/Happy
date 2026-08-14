@@ -1,86 +1,209 @@
 export default {
-  async fetch(request, env) {
+  async fetch(request) {
 
     const url = new URL(request.url);
 
-    // =================================================
+    // =====================================================
+    // CORS
+    // =====================================================
+
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type"
+    };
+
+    // =====================================================
+    // OPTIONS
+    // =====================================================
+
+    if (request.method === "OPTIONS") {
+
+      return new Response(null, {
+        headers: corsHeaders
+      });
+
+    }
+
+    // =====================================================
     // WEATHER API
-    // =================================================
+    // =====================================================
 
     if (url.pathname === "/api/weather") {
 
       try {
 
+        // =================================================
+        // LOCATION
+        // =================================================
+
         const latitude = 25.2138;
         const longitude = 75.8648;
 
+        // =================================================
+        // OPEN-METEO URL
+        // =================================================
+
         const apiURL =
           "https://api.open-meteo.com/v1/forecast" +
+
           "?latitude=" + latitude +
+
           "&longitude=" + longitude +
+
           "&current=" +
+
           "temperature_2m," +
           "relative_humidity_2m," +
           "apparent_temperature," +
+          "dew_point_2m," +
           "precipitation," +
+          "rain," +
+          "showers," +
+          "snowfall," +
           "weather_code," +
+          "cloud_cover," +
+          "pressure_msl," +
           "surface_pressure," +
-          "wind_speed_10m," +
-          "wind_direction_10m" +
-          "&hourly=" +
           "visibility," +
+          "wind_speed_10m," +
+          "wind_direction_10m," +
+          "wind_gusts_10m," +
           "uv_index," +
-          "precipitation_probability" +
+          "precipitation_probability," +
+          "is_day" +
+
+          "&daily=" +
+
+          "sunrise," +
+          "sunset," +
+          "temperature_2m_max," +
+          "temperature_2m_min," +
+          "uv_index_max," +
+          "precipitation_sum," +
+          "rain_sum," +
+          "showers_sum," +
+          "snowfall_sum," +
+          "precipitation_probability_max" +
+
           "&timezone=auto";
 
-        const response = await fetch(apiURL);
+        // =================================================
+        // FETCH WEATHER
+        // =================================================
+
+        const response =
+          await fetch(apiURL);
 
         if (!response.ok) {
-          return jsonResponse({
-            error: "Weather API failed",
-            status: response.status
-          }, 500);
+
+          return new Response(
+            JSON.stringify({
+              error: "Weather provider failed"
+            }),
+            {
+              status: 500,
+              headers: {
+                ...corsHeaders,
+                "Content-Type":
+                  "application/json"
+              }
+            }
+          );
+
         }
 
-        const data = await response.json();
+        const data =
+          await response.json();
 
-        const current = data.current;
-        const hourly = data.hourly;
+        const current =
+          data.current;
+
+        const daily =
+          data.daily;
 
         // =================================================
-        // CONDITION
+        // WEATHER CONDITION
         // =================================================
 
-        const code = current.weather_code;
+        const code =
+          current.weather_code;
 
-        let condition = "Unknown";
+        let condition =
+          "Unknown";
 
         if (code === 0) {
+
           condition = "Clear";
-        }
-        else if (code === 1 || code === 2) {
-          condition = "Cloudy";
-        }
-        else if (code === 3) {
+
+        } else if (
+          code === 1 ||
+          code === 2
+        ) {
+
+          condition = "Partly Cloudy";
+
+        } else if (
+          code === 3
+        ) {
+
           condition = "Overcast";
-        }
-        else if (code === 45 || code === 48) {
+
+        } else if (
+          code === 45 ||
+          code === 48
+        ) {
+
           condition = "Fog";
-        }
-        else if (code >= 51 && code <= 55) {
+
+        } else if (
+          code >= 51 &&
+          code <= 57
+        ) {
+
           condition = "Drizzle";
-        }
-        else if (code >= 61 && code <= 65) {
+
+        } else if (
+          code >= 61 &&
+          code <= 67
+        ) {
+
           condition = "Rain";
-        }
-        else if (code >= 71 && code <= 77) {
+
+        } else if (
+          code >= 71 &&
+          code <= 77
+        ) {
+
           condition = "Snow";
-        }
-        else if (code >= 80 && code <= 82) {
-          condition = "Showers";
-        }
-        else if (code >= 95) {
-          condition = "Storm";
+
+        } else if (
+          code >= 80 &&
+          code <= 82
+        ) {
+
+          condition = "Rain Showers";
+
+        } else if (
+          code >= 85 &&
+          code <= 86
+        ) {
+
+          condition = "Snow Showers";
+
+        } else if (
+          code === 95
+        ) {
+
+          condition = "Thunderstorm";
+
+        } else if (
+          code === 96 ||
+          code === 99
+        ) {
+
+          condition =
+            "Thunderstorm + Hail";
         }
 
         // =================================================
@@ -103,14 +226,29 @@ export default {
 
         const windDirection =
           directions[
-            Math.round(windDegree / 45) % 8
+            Math.round(
+              windDegree / 45
+            ) % 8
           ];
 
         // =================================================
-        // RESULT
+        // DAY / NIGHT
+        // =================================================
+
+        const dayNight =
+          current.is_day === 1
+            ? "Day"
+            : "Night";
+
+        // =================================================
+        // FINAL DATA
         // =================================================
 
         const result = {
+
+          // -----------------------------
+          // CURRENT WEATHER
+          // -----------------------------
 
           temperature:
             current.temperature_2m,
@@ -121,26 +259,70 @@ export default {
           humidity:
             current.relative_humidity_2m,
 
+          dew_point:
+            current.dew_point_2m,
+
+          // -----------------------------
+          // WIND
+          // -----------------------------
+
           wind:
             current.wind_speed_10m,
 
           wind_direction:
             windDirection,
 
+          wind_degree:
+            current.wind_direction_10m,
+
+          wind_gust:
+            current.wind_gusts_10m,
+
+          // -----------------------------
+          // ATMOSPHERE
+          // -----------------------------
+
           pressure:
             current.surface_pressure,
 
-          rain:
-            hourly.precipitation_probability[0],
+          pressure_msl:
+            current.pressure_msl,
+
+          cloud_cover:
+            current.cloud_cover,
+
+          visibility:
+            current.visibility,
+
+          // -----------------------------
+          // RAIN
+          // -----------------------------
 
           precipitation:
             current.precipitation,
 
-          visibility:
-            hourly.visibility[0],
+          rain:
+            current.rain,
+
+          showers:
+            current.showers,
+
+          snowfall:
+            current.snowfall,
+
+          rain_probability:
+            current.precipitation_probability,
+
+          // -----------------------------
+          // UV
+          // -----------------------------
 
           uv:
-            hourly.uv_index[0],
+            current.uv_index,
+
+          // -----------------------------
+          // CONDITION
+          // -----------------------------
 
           condition:
             condition,
@@ -148,57 +330,148 @@ export default {
           weather_code:
             code,
 
-          updated:
-            current.time,
+          day_night:
+            dayNight,
+
+          // -----------------------------
+          // TODAY
+          // -----------------------------
+
+          sunrise:
+            daily.sunrise[0],
+
+          sunset:
+            daily.sunset[0],
+
+          today_max:
+            daily.temperature_2m_max[0],
+
+          today_min:
+            daily.temperature_2m_min[0],
+
+          today_uv_max:
+            daily.uv_index_max[0],
+
+          today_rain:
+            daily.rain_sum[0],
+
+          today_precipitation:
+            daily.precipitation_sum[0],
+
+          today_showers:
+            daily.showers_sum[0],
+
+          today_snow:
+            daily.snowfall_sum[0],
+
+          today_rain_probability:
+            daily.precipitation_probability_max[0],
+
+          // -----------------------------
+          // SYSTEM
+          // -----------------------------
 
           location:
-            "Kota, Rajasthan, India"
+            "Kota, Rajasthan, India",
+
+          latitude:
+            latitude,
+
+          longitude:
+            longitude,
+
+          timezone:
+            data.timezone,
+
+          updated:
+            current.time
+
         };
 
-        return jsonResponse(
-          result,
-          200
+        // =================================================
+        // RESPONSE
+        // =================================================
+
+        return new Response(
+          JSON.stringify(
+            result,
+            null,
+            2
+          ),
+          {
+            headers: {
+              ...corsHeaders,
+
+              "Content-Type":
+                "application/json",
+
+              "Cache-Control":
+                "no-cache, no-store"
+            }
+          }
+        );
+
+      } catch (error) {
+
+        return new Response(
+          JSON.stringify({
+            error:
+              error.toString()
+          }),
+          {
+            status: 500,
+
+            headers: {
+              ...corsHeaders,
+
+              "Content-Type":
+                "application/json"
+            }
+          }
         );
 
       }
-      catch (error) {
 
-        return jsonResponse({
-          error: error.toString()
-        }, 500);
-      }
     }
 
-    // =================================================
-    // NORMAL WEBSITE
-    // =================================================
+    // =====================================================
+    // API INFO
+    // =====================================================
 
-    return env.ASSETS.fetch(request);
+    if (url.pathname === "/api") {
+
+      return new Response(
+        JSON.stringify({
+          name: "Happy Weather API",
+          status: "online",
+          endpoint: "/api/weather",
+          update: "live"
+        }, null, 2),
+        {
+          headers: {
+            ...corsHeaders,
+            "Content-Type":
+              "application/json"
+          }
+        }
+      );
+
+    }
+
+    // =====================================================
+    // DEFAULT
+    // =====================================================
+
+    return new Response(
+      "Happy Weather Server is Online!",
+      {
+        headers: {
+          ...corsHeaders,
+          "Content-Type":
+            "text/plain"
+        }
+      }
+    );
+
   }
 };
-
-
-// =====================================================
-// JSON RESPONSE
-// =====================================================
-
-function jsonResponse(data, status = 200) {
-
-  return new Response(
-    JSON.stringify(data, null, 2),
-    {
-      status: status,
-
-      headers: {
-        "Content-Type":
-          "application/json",
-
-        "Access-Control-Allow-Origin":
-          "*",
-
-        "Cache-Control":
-          "no-cache"
-      }
-    }
-  );
-}
