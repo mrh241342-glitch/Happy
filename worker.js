@@ -1,5 +1,5 @@
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
 
     const url = new URL(request.url);
 
@@ -11,7 +11,6 @@ export default {
 
       try {
 
-        // Kota, Rajasthan coordinates
         const latitude = 25.2138;
         const longitude = 75.8648;
 
@@ -34,111 +33,55 @@ export default {
           "precipitation_probability" +
           "&timezone=auto";
 
-
-        const response =
-          await fetch(apiURL);
-
+        const response = await fetch(apiURL);
 
         if (!response.ok) {
-
-          return new Response(
-            JSON.stringify({
-              error: "Weather API failed"
-            }),
-            {
-              status: 500,
-              headers: {
-                "Content-Type":
-                  "application/json",
-                "Access-Control-Allow-Origin":
-                  "*"
-              }
-            }
-          );
+          return jsonResponse({
+            error: "Weather API failed",
+            status: response.status
+          }, 500);
         }
 
+        const data = await response.json();
 
-        const data =
-          await response.json();
-
-
-        const current =
-          data.current;
-
-        const hourly =
-          data.hourly;
-
+        const current = data.current;
+        const hourly = data.hourly;
 
         // =================================================
-        // WEATHER CONDITION
+        // CONDITION
         // =================================================
 
-        const code =
-          current.weather_code;
+        const code = current.weather_code;
 
-        let condition =
-          "Unknown";
-
+        let condition = "Unknown";
 
         if (code === 0) {
-
           condition = "Clear";
-
-        } else if (
-          code === 1 ||
-          code === 2
-        ) {
-
+        }
+        else if (code === 1 || code === 2) {
           condition = "Cloudy";
-
-        } else if (
-          code === 3
-        ) {
-
+        }
+        else if (code === 3) {
           condition = "Overcast";
-
-        } else if (
-          code === 45 ||
-          code === 48
-        ) {
-
+        }
+        else if (code === 45 || code === 48) {
           condition = "Fog";
-
-        } else if (
-          code >= 51 &&
-          code <= 55
-        ) {
-
+        }
+        else if (code >= 51 && code <= 55) {
           condition = "Drizzle";
-
-        } else if (
-          code >= 61 &&
-          code <= 65
-        ) {
-
+        }
+        else if (code >= 61 && code <= 65) {
           condition = "Rain";
-
-        } else if (
-          code >= 71 &&
-          code <= 77
-        ) {
-
+        }
+        else if (code >= 71 && code <= 77) {
           condition = "Snow";
-
-        } else if (
-          code >= 80 &&
-          code <= 82
-        ) {
-
+        }
+        else if (code >= 80 && code <= 82) {
           condition = "Showers";
-
-        } else if (
-          code >= 95
-        ) {
-
+        }
+        else if (code >= 95) {
           condition = "Storm";
         }
-
 
         // =================================================
         // WIND DIRECTION
@@ -155,21 +98,16 @@ export default {
           "NW"
         ];
 
-
         const windDegree =
           current.wind_direction_10m;
 
-
         const windDirection =
           directions[
-            Math.round(
-              windDegree / 45
-            ) % 8
+            Math.round(windDegree / 45) % 8
           ];
 
-
         // =================================================
-        // FINAL JSON
+        // RESULT
         // =================================================
 
         const result = {
@@ -193,8 +131,7 @@ export default {
             current.surface_pressure,
 
           rain:
-            hourly
-              .precipitation_probability[0],
+            hourly.precipitation_probability[0],
 
           precipitation:
             current.precipitation,
@@ -218,64 +155,50 @@ export default {
             "Kota, Rajasthan, India"
         };
 
-
-        return new Response(
-          JSON.stringify(
-            result,
-            null,
-            2
-          ),
-          {
-            headers: {
-
-              "Content-Type":
-                "application/json",
-
-              "Access-Control-Allow-Origin":
-                "*",
-
-              "Cache-Control":
-                "no-cache"
-            }
-          }
+        return jsonResponse(
+          result,
+          200
         );
 
+      }
+      catch (error) {
 
-      } catch (error) {
-
-        return new Response(
-          JSON.stringify({
-            error:
-              error.toString()
-          }),
-          {
-            status: 500,
-
-            headers: {
-              "Content-Type":
-                "application/json",
-
-              "Access-Control-Allow-Origin":
-                "*"
-            }
-          }
-        );
+        return jsonResponse({
+          error: error.toString()
+        }, 500);
       }
     }
-
 
     // =================================================
     // NORMAL WEBSITE
     // =================================================
 
-    return new Response(
-      "Happy Weather Server is Online!",
-      {
-        headers: {
-          "Content-Type":
-            "text/plain"
-        }
-      }
-    );
+    return env.ASSETS.fetch(request);
   }
 };
+
+
+// =====================================================
+// JSON RESPONSE
+// =====================================================
+
+function jsonResponse(data, status = 200) {
+
+  return new Response(
+    JSON.stringify(data, null, 2),
+    {
+      status: status,
+
+      headers: {
+        "Content-Type":
+          "application/json",
+
+        "Access-Control-Allow-Origin":
+          "*",
+
+        "Cache-Control":
+          "no-cache"
+      }
+    }
+  );
+}
