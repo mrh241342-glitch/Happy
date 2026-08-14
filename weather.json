@@ -1,0 +1,15 @@
+{
+  "temperature": 0,
+  "feels_like": 0,
+  "humidity": 0,
+  "wind": 0,
+  "wind_direction": "N",
+  "pressure": 0,
+  "rain": 0,
+  "precipitation": 0,
+  "visibility": 0,
+  "uv": 0,
+  "condition": "Loading",
+  "weather_code": 0,
+  "updated": ""
+}
